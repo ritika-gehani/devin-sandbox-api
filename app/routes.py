@@ -1,6 +1,13 @@
 from flask import Blueprint, current_app, jsonify, request
 
+from app.store import ItemNotFound
+
 bp = Blueprint("items", __name__)
+
+
+@bp.errorhandler(ItemNotFound)
+def handle_item_not_found(_exc: ItemNotFound):
+    return jsonify(error="item not found"), 404
 
 
 def store():

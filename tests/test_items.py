@@ -1,6 +1,7 @@
 import pytest
 
 from app import create_app
+from app.store import ItemNotFound, ItemStore
 
 
 @pytest.fixture
@@ -37,3 +38,21 @@ def test_mark_done(client):
     res = client.post(f"/items/{created['id']}/done")
     assert res.status_code == 200
     assert res.get_json()["done"] is True
+
+
+def test_get_unknown_item_returns_404(client):
+    res = client.get("/items/999")
+    assert res.status_code == 404
+    assert res.get_json() == {"error": "item not found"}
+
+
+def test_mark_done_unknown_item_returns_404(client):
+    res = client.post("/items/999/done")
+    assert res.status_code == 404
+    assert res.get_json() == {"error": "item not found"}
+    assert client.get("/items").get_json() == []
+
+
+def test_store_get_unknown_raises_item_not_found():
+    with pytest.raises(ItemNotFound):
+        ItemStore().get(999)
