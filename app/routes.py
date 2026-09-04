@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app, jsonify, request
 
-from app.store import ItemNotFound
+from app.store import InvalidItemName, ItemNotFound
 
 bp = Blueprint("items", __name__)
 
@@ -8,6 +8,11 @@ bp = Blueprint("items", __name__)
 @bp.errorhandler(ItemNotFound)
 def handle_item_not_found(_exc: ItemNotFound):
     return jsonify(error="item not found"), 404
+
+
+@bp.errorhandler(InvalidItemName)
+def handle_invalid_item_name(exc: InvalidItemName):
+    return jsonify(error=str(exc)), 400
 
 
 def store():
@@ -30,7 +35,9 @@ def list_items():
 
 @bp.post("/items")
 def create_item():
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        payload = {}
     item = store().add(payload.get("name"))
     return jsonify(item.to_dict()), 201
 

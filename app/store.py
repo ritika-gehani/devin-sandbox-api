@@ -2,6 +2,13 @@ from dataclasses import dataclass, asdict
 from itertools import count
 
 
+MAX_NAME_LENGTH = 100
+
+
+class InvalidItemName(ValueError):
+    pass
+
+
 class ItemNotFound(LookupError):
     def __init__(self, item_id: int) -> None:
         super().__init__(f"item {item_id} not found")
@@ -33,7 +40,8 @@ class ItemStore:
             raise ItemNotFound(item_id) from None
 
     def add(self, name: str) -> Item:
-        item = Item(id=next(self._ids), name=name)
+        cleaned = _clean_name(name)
+        item = Item(id=next(self._ids), name=cleaned)
         self._items[item.id] = item
         return item
 
@@ -41,3 +49,12 @@ class ItemStore:
         item = self.get(item_id)
         item.done = True
         return item
+
+
+def _clean_name(name: object) -> str:
+    if not isinstance(name, str) or not name.strip():
+        raise InvalidItemName("name is required and must be a non-empty string")
+    cleaned = name.strip()
+    if len(cleaned) > MAX_NAME_LENGTH:
+        raise InvalidItemName(f"name must be at most {MAX_NAME_LENGTH} characters")
+    return cleaned
