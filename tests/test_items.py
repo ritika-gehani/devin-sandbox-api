@@ -45,6 +45,42 @@ def test_mark_done(client):
     assert res.get_json()["done"] is True
 
 
+@pytest.fixture
+def mixed_items(client):
+    todo = client.post("/items", json={"name": "todo"}).get_json()
+    done = client.post("/items", json={"name": "done"}).get_json()
+    done = client.post(f"/items/{done['id']}/done").get_json()
+    return todo, done
+
+
+@pytest.mark.parametrize("value", ["true", "True", "TRUE"])
+def test_list_filters_done_true(client, mixed_items, value):
+    _, done = mixed_items
+    res = client.get(f"/items?done={value}")
+    assert res.status_code == 200
+    assert res.get_json() == [done]
+
+
+@pytest.mark.parametrize("value", ["false", "False", "FALSE"])
+def test_list_filters_done_false(client, mixed_items, value):
+    todo, _ = mixed_items
+    res = client.get(f"/items?done={value}")
+    assert res.status_code == 200
+    assert res.get_json() == [todo]
+
+
+def test_list_without_done_filter_returns_all(client, mixed_items):
+    todo, done = mixed_items
+    assert client.get("/items").get_json() == [todo, done]
+
+
+@pytest.mark.parametrize("value", ["", "1", "0", "yes", "no", "banana"])
+def test_list_rejects_invalid_done_filter(client, mixed_items, value):
+    res = client.get(f"/items?done={value}")
+    assert res.status_code == 400
+    assert res.get_json() == {"error": "done must be 'true' or 'false'"}
+
+
 def test_get_unknown_item_returns_404(client):
     res = client.get("/items/999")
     assert res.status_code == 404
