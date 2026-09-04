@@ -2,6 +2,12 @@ from dataclasses import dataclass, asdict
 from itertools import count
 
 
+class ItemNotFound(LookupError):
+    def __init__(self, item_id: int) -> None:
+        super().__init__(f"item {item_id} not found")
+        self.item_id = item_id
+
+
 @dataclass
 class Item:
     id: int
@@ -21,7 +27,10 @@ class ItemStore:
         return list(self._items.values())
 
     def get(self, item_id: int) -> Item:
-        return self._items[item_id]
+        try:
+            return self._items[item_id]
+        except KeyError:
+            raise ItemNotFound(item_id) from None
 
     def add(self, name: str) -> Item:
         item = Item(id=next(self._ids), name=name)
