@@ -35,7 +35,9 @@ def list_items():
 
 @bp.post("/items")
 def create_item():
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        payload = {}
     item = store().add(payload.get("name"))
     return jsonify(item.to_dict()), 201
 

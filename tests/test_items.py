@@ -76,6 +76,16 @@ def test_create_rejects_missing_or_empty_name(client, payload):
     assert client.get("/items").get_json() == []
 
 
+@pytest.mark.parametrize("body", ['"just a string"', "[1, 2]", "42", "true", "not json"])
+def test_create_rejects_non_object_body(client, body):
+    res = client.post("/items", data=body, content_type="application/json")
+    assert res.status_code == 400
+    assert res.get_json() == {
+        "error": "name is required and must be a non-empty string"
+    }
+    assert client.get("/items").get_json() == []
+
+
 def test_create_rejects_name_over_max_length(client):
     res = client.post("/items", json={"name": "x" * (MAX_NAME_LENGTH + 1)})
     assert res.status_code == 400
