@@ -30,5 +30,6 @@ make test
 | POST   | `/items`            | Create item `{"name": "..."}`  |
 | GET    | `/items/<id>`       | Get one item                   |
 | POST   | `/items/<id>/done`  | Mark item as done              |
+| DELETE | `/items/<id>`       | Delete item (returns 204)      |
 
 Items are stored in memory and reset on restart.

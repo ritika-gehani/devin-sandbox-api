@@ -94,6 +94,44 @@ def test_mark_done_unknown_item_returns_404(client):
     assert client.get("/items").get_json() == []
 
 
+def test_delete_item_returns_204_and_removes_it(client):
+    keep = client.post("/items", json={"name": "keep"}).get_json()
+    gone = client.post("/items", json={"name": "gone"}).get_json()
+
+    res = client.delete(f"/items/{gone['id']}")
+    assert res.status_code == 204
+    assert res.data == b""
+
+    assert client.get(f"/items/{gone['id']}").status_code == 404
+    assert client.get("/items").get_json() == [keep]
+
+
+def test_delete_unknown_item_returns_404(client):
+    res = client.delete("/items/999")
+    assert res.status_code == 404
+    assert res.get_json() == {"error": "item not found"}
+
+
+def test_delete_twice_returns_404_second_time(client):
+    created = client.post("/items", json={"name": "once"}).get_json()
+    assert client.delete(f"/items/{created['id']}").status_code == 204
+    res = client.delete(f"/items/{created['id']}")
+    assert res.status_code == 404
+    assert res.get_json() == {"error": "item not found"}
+
+
+def test_delete_does_not_reuse_ids(client):
+    first = client.post("/items", json={"name": "first"}).get_json()
+    client.delete(f"/items/{first['id']}")
+    second = client.post("/items", json={"name": "second"}).get_json()
+    assert second["id"] == first["id"] + 1
+
+
+def test_store_remove_unknown_raises_item_not_found():
+    with pytest.raises(ItemNotFound):
+        ItemStore().remove(999)
+
+
 def test_store_get_unknown_raises_item_not_found():
     with pytest.raises(ItemNotFound):
         ItemStore().get(999)
