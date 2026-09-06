@@ -50,6 +50,10 @@ class ItemStore:
         item.done = True
         return item
 
+    def remove(self, item_id: int) -> None:
+        self.get(item_id)
+        del self._items[item_id]
+
 
 def _clean_name(name: object) -> str:
     if not isinstance(name, str) or not name.strip():

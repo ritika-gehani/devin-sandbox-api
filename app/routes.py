@@ -69,3 +69,9 @@ def get_item(item_id: int):
 @bp.post("/items/<int:item_id>/done")
 def complete_item(item_id: int):
     return jsonify(store().mark_done(item_id).to_dict())
+
+
+@bp.delete("/items/<int:item_id>")
+def delete_item(item_id: int):
+    store().remove(item_id)
+    return "", 204
