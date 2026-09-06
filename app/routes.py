@@ -4,6 +4,19 @@ from app.store import InvalidItemName, ItemNotFound
 
 bp = Blueprint("items", __name__)
 
+_BOOL_VALUES = {"true": True, "false": False}
+
+
+class InvalidQueryParam(ValueError):
+    pass
+
+
+def _parse_bool(name: str, raw: str) -> bool:
+    try:
+        return _BOOL_VALUES[raw.strip().lower()]
+    except KeyError:
+        raise InvalidQueryParam(f"{name} must be 'true' or 'false'") from None
+
 
 @bp.errorhandler(ItemNotFound)
 def handle_item_not_found(_exc: ItemNotFound):
@@ -12,6 +25,11 @@ def handle_item_not_found(_exc: ItemNotFound):
 
 @bp.errorhandler(InvalidItemName)
 def handle_invalid_item_name(exc: InvalidItemName):
+    return jsonify(error=str(exc)), 400
+
+
+@bp.errorhandler(InvalidQueryParam)
+def handle_invalid_query_param(exc: InvalidQueryParam):
     return jsonify(error=str(exc)), 400
 
 
@@ -29,7 +47,8 @@ def list_items():
     done = request.args.get("done")
     items = store().list()
     if done is not None:
-        items = [i for i in items if i.done == done]
+        wanted = _parse_bool("done", done)
+        items = [i for i in items if i.done is wanted]
     return jsonify([i.to_dict() for i in items])
 
 
